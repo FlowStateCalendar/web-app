@@ -10,7 +10,7 @@ export default async function TasksPage() {
 
   const { data: tasks } = await supabase
     .from("tasks")
-    .select("id, title, date, category, length")
+    .select("id, title, description, date, category, length, frequency, energy_cost, notification_frequency, notification_type, notification_timings")
     .eq("user_profile_id", user?.id)
     .order("date", { ascending: false });
 

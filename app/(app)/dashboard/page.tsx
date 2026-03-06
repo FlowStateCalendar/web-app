@@ -7,12 +7,6 @@ export default async function DashboardPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: profile } = await supabase
-    .from("user_profiles")
-    .select("name")
-    .eq("id", user?.id)
-    .single();
-
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
   const todayEnd = new Date();
@@ -28,12 +22,6 @@ export default async function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-6">
-      <header className="mb-6 flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-gray-900">
-          Hi, {profile?.name ?? user?.email ?? "User"}
-        </h1>
-      </header>
-
       <section className="mb-8">
         <h2 className="mb-4 text-lg font-medium text-gray-900">
           Today&apos;s Upcoming Events
