@@ -33,3 +33,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# supabase edge functions and database schema (not public)
+supabase/functions/
+docs/DATABASE_SCHEMA.md

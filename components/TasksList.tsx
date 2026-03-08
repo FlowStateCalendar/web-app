@@ -29,9 +29,19 @@ export function TasksList({ tasks }: { tasks: TaskListItem[] }) {
     setDeleting(true);
     try {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      await supabase.from("tasks").delete().eq("id", id).eq("user_profile_id", user.id);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) return;
+      const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const res = await fetch(`${baseUrl}/functions/v1/task-delete`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ taskId: id }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json?.error ?? `Request failed (${res.status})`);
       setDeleteConfirmId(null);
       router.refresh();
     } finally {

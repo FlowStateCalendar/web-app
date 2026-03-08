@@ -7,6 +7,8 @@ This folder contains **code to be deployed to Supabase** to replace the business
 - **`functions/_shared/`** – Shared TypeScript modules (reward calculation, XP/level, date utils). Mirrors the Swift services; can be reused by other Edge Functions.
 - **`functions/complete-event/`** – Self-contained Edge Function that implements the full “complete event” flow. Imports from local files in the same folder so it deploys without depending on `_shared` (Supabase deploys each function directory).
 - **`functions/shop-purchase/`** – Edge Function for aquarium shop: validates and applies a purchase (deduct coins, add fish/accessory/tank). Used by Plan 3 web app shop.
+- **`functions/task-create/`**, **`functions/task-update/`**, **`functions/task-delete/`** – Task CRUD; server computes base_xp/base_coins. Used by NewTaskForm and TasksList.
+- **`functions/user-profile-ensure/`**, **`functions/user-profile-update/`** – Profile upsert and partial update (name, profile_picture). Used by Settings and UserBar.
 
 ## iOS sources mirrored
 
@@ -54,16 +56,20 @@ Catalog keys (examples): `tropical_fish`, `blue_tang`, `clownfish`, `angelfish`,
 From the **web-app** repo root (parent of `supabase/`):
 
 ```bash
-# Deploy both Edge Functions
+# Deploy all Edge Functions
 supabase functions deploy complete-event
 supabase functions deploy shop-purchase
+supabase functions deploy task-create
+supabase functions deploy task-update
+supabase functions deploy task-delete
+supabase functions deploy user-profile-ensure
+supabase functions deploy user-profile-update
 ```
 
 Ensure `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` are set in the Edge Function secrets (or project env).
 
-## Next steps (not done yet)
+## Next steps
 
-- Deploy `complete-event` and test with the web app (switch Completing Task to call this function instead of client-side Supabase writes).
-- Deploy `shop-purchase` and add Shop UI on web app that calls it (Plan 3).
-- Optionally add more Edge Functions (e.g. compute-rewards for UI preview, weekly-reset cron).
-- Later: refactor iOS to call `complete-event` and optionally `shop-purchase` from the app.
+- Web app uses `complete-event`, `shop-purchase`, `task-create`, `task-update`, `task-delete`, and `user-profile-update`; deploy all and set service role secret if needed.
+- Optionally add more Edge Functions (e.g. compute-rewards for UI preview, weekly-reset cron, aquarium-update for clean/feed/rename).
+- Later: refactor iOS to call these Edge Functions from the app.

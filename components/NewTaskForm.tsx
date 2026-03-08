@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/client";
-import { baseXPForTask, baseCoinsForTask, TASK_CATEGORIES, TASK_FREQUENCIES } from "@/lib/task-utils";
+import { TASK_CATEGORIES, TASK_FREQUENCIES } from "@/lib/task-utils";
 
 const NOTIFICATION_FREQUENCIES = ["once", "daily", "weekly"] as const;
 const NOTIFICATION_TYPES = ["default", "reminder", "silent"] as const;
@@ -102,22 +102,25 @@ export function NewTaskForm({
     setLoading(true);
     try {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not signed in");
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error("Not signed in");
 
       const lengthSeconds = data.lengthMinutes * 60;
-      const baseXp = baseXPForTask(data.frequency, data.energy);
-      const baseCoins = baseCoinsForTask(data.frequency, data.energy);
-      const now = new Date().toISOString();
       const taskDate = new Date(data.date).toISOString();
       const notificationTimings = [
         { minutesBeforeEvent: -data.notifyMinutesBefore, isEnabled: true },
       ];
+      const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 
       if (isEdit && task) {
-        await supabase
-          .from("tasks")
-          .update({
+        const res = await fetch(`${baseUrl}/functions/v1/task-update`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            taskId: task.id,
             title: data.title,
             description: data.description,
             length: lengthSeconds,
@@ -125,37 +128,36 @@ export function NewTaskForm({
             frequency: data.frequency,
             date: taskDate,
             energy_cost: data.energy,
-            base_xp: baseXp,
-            base_coins: baseCoins,
-            updated_at: now,
             notification_frequency: data.notification_frequency,
             notification_type: data.notification_type,
             notification_timings: notificationTimings,
-          })
-          .eq("id", task.id)
-          .eq("user_profile_id", user.id);
-      } else {
-        await supabase.from("tasks").insert({
-          id: crypto.randomUUID(),
-          user_profile_id: user.id,
-          title: data.title,
-          description: data.description,
-          length: lengthSeconds,
-          category: data.category,
-          frequency: data.frequency,
-          date: taskDate,
-          energy_cost: data.energy,
-          base_xp: baseXp,
-          base_coins: baseCoins,
-          created_at: now,
-          updated_at: now,
-          notification_frequency: data.notification_frequency,
-          notification_type: data.notification_type,
-          notification_sound: "default",
-          notification_content: "",
-          notification_category: "default",
-          notification_timings: notificationTimings,
+          }),
         });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(json?.error ?? `Request failed (${res.status})`);
+      } else {
+        const res = await fetch(`${baseUrl}/functions/v1/task-create`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            title: data.title,
+            description: data.description,
+            length: lengthSeconds,
+            category: data.category,
+            frequency: data.frequency,
+            date: taskDate,
+            energy_cost: data.energy,
+            notification_frequency: data.notification_frequency,
+            notification_type: data.notification_type,
+            notification_timings: notificationTimings,
+            notifyMinutesBefore: data.notifyMinutesBefore,
+          }),
+        });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(json?.error ?? `Request failed (${res.status})`);
       }
 
       form.reset();

@@ -48,6 +48,8 @@ export function CompletingTaskView({ event }: { event: Event }) {
   const [earnedXp, setEarnedXp] = useState(0);
   const [earnedCoins, setEarnedCoins] = useState(0);
   const [completionPct, setCompletionPct] = useState(0);
+  const [completeError, setCompleteError] = useState<string | null>(null);
+  const [isCompleting, setIsCompleting] = useState(false);
 
   const completionPercentage = event.lengthSeconds > 0
     ? 1 - timeRemaining / event.lengthSeconds
@@ -123,54 +125,43 @@ export function CompletingTaskView({ event }: { event: Event }) {
   };
 
   async function handleComplete(percentage: number) {
-    const xp = xpForCompletion(event.baseXp, event.lengthSeconds, percentage);
-    const coins = coinsForCompletion(event.baseCoins, event.lengthSeconds, percentage);
-    setEarnedXp(xp);
-    setEarnedCoins(coins);
     setCompletionPct(percentage);
+    setCompleteError(null);
+    setIsCompleting(true);
 
     const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) {
+      setCompleteError("Not signed in.");
+      setIsCompleting(false);
+      return;
+    }
 
-    const { data: profile } = await supabase
-      .from("user_profiles")
-      .select("xp, coins, weekly_coins, level")
-      .eq("id", user.id)
-      .single();
-
-    const newXp = (profile?.xp ?? 0) + xp;
-    const newCoins = (profile?.coins ?? 0) + coins;
-    const newWeeklyCoins = (profile?.weekly_coins ?? 0) + coins;
-
-    await supabase.from("completed_events").insert({
-      id: crypto.randomUUID(),
-      user_profile_id: user.id,
-      completed_at: new Date().toISOString(),
-      completion_percentage: percentage,
-      reward_xp: xp,
-      reward_coins: coins,
-      created_at: new Date().toISOString(),
-      length: Math.round(event.lengthSeconds * percentage),
-      title: event.title,
-      energy_cost: event.energy,
-      category: event.category,
+    const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/complete-event`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+        eventId: event.id,
+        completionPercentage: percentage,
+      }),
     });
 
-    await supabase
-      .from("user_profiles")
-      .update({
-        xp: newXp,
-        coins: newCoins,
-        weekly_coins: newWeeklyCoins,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", user.id);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setCompleteError(data?.error ?? `Request failed (${res.status})`);
+      setIsCompleting(false);
+      return;
+    }
 
-    await supabase.from("events").delete().eq("id", event.id);
-
+    setEarnedXp(data.rewards?.xp ?? 0);
+    setEarnedCoins(data.rewards?.coins ?? 0);
     clearSession();
     setShowCompletionModal(true);
+    setIsCompleting(false);
   }
 
   const handleEndEarly = () => {
@@ -224,14 +215,16 @@ export function CompletingTaskView({ event }: { event: Event }) {
               <button
                 type="button"
                 onClick={handlePause}
-                className="w-full rounded-xl bg-amber-500 py-3 font-medium text-white hover:bg-amber-600"
+                disabled={isCompleting}
+                className="w-full rounded-xl bg-amber-500 py-3 font-medium text-white hover:bg-amber-600 disabled:opacity-50"
               >
                 Pause
               </button>
               <button
                 type="button"
                 onClick={handleEndEarly}
-                className="w-full rounded-xl border border-gray-300 bg-white py-3 font-medium text-gray-700 hover:bg-gray-50"
+                disabled={isCompleting}
+                className="w-full rounded-xl border border-gray-300 bg-white py-3 font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
               >
                 End Task Early
               </button>
@@ -242,14 +235,16 @@ export function CompletingTaskView({ event }: { event: Event }) {
               <button
                 type="button"
                 onClick={handleResume}
-                className="w-full rounded-xl bg-blue-600 py-3 font-medium text-white hover:bg-blue-700"
+                disabled={isCompleting}
+                className="w-full rounded-xl bg-blue-600 py-3 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
               >
                 Resume
               </button>
               <button
                 type="button"
                 onClick={handleEndEarly}
-                className="w-full rounded-xl border border-gray-300 bg-white py-3 font-medium text-gray-700 hover:bg-gray-50"
+                disabled={isCompleting}
+                className="w-full rounded-xl border border-gray-300 bg-white py-3 font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
               >
                 End Task Early
               </button>
@@ -263,6 +258,14 @@ export function CompletingTaskView({ event }: { event: Event }) {
             >
               Return to Dashboard
             </Link>
+          )}
+          {completeError && (
+            <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700" role="alert">
+              {completeError}
+            </p>
+          )}
+          {isCompleting && (
+            <p className="text-center text-sm text-gray-500">Completing task…</p>
           )}
         </div>
       </div>

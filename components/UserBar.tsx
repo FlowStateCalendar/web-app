@@ -28,10 +28,19 @@ export function UserBar({
     setSavingName(true);
     try {
       const supabase = createClient();
-      await supabase
-        .from("user_profiles")
-        .update({ name: editName.trim() || null, updated_at: new Date().toISOString() })
-        .eq("id", user.id);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) return;
+      const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const res = await fetch(`${baseUrl}/functions/v1/user-profile-update`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ name: editName.trim() || null }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json?.error ?? "Failed to save name");
       setLocalProfile((p) => (p ? { ...p, name: editName.trim() || null } : p));
     } finally {
       setSavingName(false);
