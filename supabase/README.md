@@ -9,6 +9,7 @@ This folder contains **code to be deployed to Supabase** to replace the business
 - **`functions/shop-purchase/`** – Edge Function for aquarium shop: validates and applies a purchase (deduct coins, add fish/accessory/tank). Used by Plan 3 web app shop.
 - **`functions/task-create/`**, **`functions/task-update/`**, **`functions/task-delete/`** – Task CRUD; server computes base_xp/base_coins. Used by NewTaskForm and TasksList.
 - **`functions/user-profile-ensure/`**, **`functions/user-profile-update/`** – Profile upsert and partial update (name, profile_picture). Used by Settings and UserBar.
+- **`functions/daily-aquarium-upkeep/`** – Cron-invoked (no user JWT): daily clean_level decrease and fish health decay when last_feed &gt; 24h. Schedule via pg_cron + pg_net; set CRON_SECRET in Edge Function secrets.
 
 ## iOS sources mirrored
 
@@ -64,12 +65,18 @@ supabase functions deploy task-update
 supabase functions deploy task-delete
 supabase functions deploy user-profile-ensure
 supabase functions deploy user-profile-update
+supabase functions deploy daily-aquarium-upkeep
 ```
 
-Ensure `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` are set in the Edge Function secrets (or project env).
+Ensure `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` are set in the Edge Function secrets (or project env). For **daily-aquarium-upkeep**, set **CRON_SECRET** so only your cron job can invoke it.
+
+**Time-based jobs (pg_cron):**
+
+- **Weekly leaderboard reset:** Applied by migration `20250307000002_weekly_leaderboard_reset_cron.sql` (resets `user_profiles.weekly_coins` every Monday 00:00 UTC). Requires pg_cron.
+- **Daily aquarium upkeep:** Deploy `daily-aquarium-upkeep`, set CRON_SECRET, then run the `cron.schedule` + `net.http_post` SQL once in the SQL Editor (see [docs/EDGE-FUNCTIONS-IMPLEMENTATION.md](../docs/EDGE-FUNCTIONS-IMPLEMENTATION.md)). Requires pg_net.
 
 ## Next steps
 
 - Web app uses `complete-event`, `shop-purchase`, `task-create`, `task-update`, `task-delete`, and `user-profile-update`; deploy all and set service role secret if needed.
-- Optionally add more Edge Functions (e.g. compute-rewards for UI preview, weekly-reset cron, aquarium-update for clean/feed/rename).
+- Run migrations for `last_feed` and weekly leaderboard cron; schedule daily-aquarium-upkeep via SQL Editor with your project ref and CRON_SECRET.
 - Later: refactor iOS to call these Edge Functions from the app.

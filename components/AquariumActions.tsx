@@ -17,11 +17,10 @@ export function AquariumActions({ aquariumId, cleanLevel }: Props) {
     setLoading("clean");
     try {
       const supabase = createClient();
-      const newLevel = Math.min(100, cleanLevel + 25);
       await supabase
         .from("aquariums")
         .update({
-          clean_level: newLevel,
+          clean_level: 100,
           updated_at: new Date().toISOString(),
         })
         .eq("id", aquariumId);
@@ -35,12 +34,12 @@ export function AquariumActions({ aquariumId, cleanLevel }: Props) {
     setLoading("feed");
     try {
       const supabase = createClient();
-      // Feed: update fish JSON (simplified – just bump last_fed in stored JSON if needed)
-      // For minimal implementation we only update updated_at so UI refreshes
+      const now = new Date().toISOString();
       await supabase
         .from("aquariums")
         .update({
-          updated_at: new Date().toISOString(),
+          last_feed: now,
+          updated_at: now,
         })
         .eq("id", aquariumId);
       router.refresh();

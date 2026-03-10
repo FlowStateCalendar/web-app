@@ -1,6 +1,6 @@
 # Edge Functions Implementation Guide
 
-Step-by-step instructions for setting up, deploying, and calling Supabase Edge Functions in this project. The app uses **complete-event** (task/event completion and rewards), **shop-purchase** (aquarium shop), **task-create** / **task-update** / **task-delete** (tasks CRUD), and **user-profile-ensure** / **user-profile-update** (profile create/update).
+Step-by-step instructions for setting up, deploying, and calling Supabase Edge Functions in this project. The app uses **complete-event** (task/event completion and rewards), **shop-purchase** (aquarium shop), **task-create** / **task-update** / **task-delete** (tasks CRUD), **user-profile-ensure** / **user-profile-update** (profile create/update), and **daily-aquarium-upkeep** (cron-invoked: clean_level decay and fish health decay when not fed).
 
 ---
 
@@ -64,6 +64,7 @@ supabase functions deploy task-update
 supabase functions deploy task-delete
 supabase functions deploy user-profile-ensure
 supabase functions deploy user-profile-update
+supabase functions deploy daily-aquarium-upkeep
 ```
 
 **Deploy a single function:**
@@ -92,6 +93,7 @@ After a successful deploy, the functions are available at:
 - `https://<your-project-ref>.supabase.co/functions/v1/task-delete`
 - `https://<your-project-ref>.supabase.co/functions/v1/user-profile-ensure`
 - `https://<your-project-ref>.supabase.co/functions/v1/user-profile-update`
+- `https://<your-project-ref>.supabase.co/functions/v1/daily-aquarium-upkeep`
 
 ---
 
@@ -174,6 +176,43 @@ The web app calls **shop-purchase** from the shop UI: [app/(app)/aquarium/shop/S
 - **Auth:** Required. Updates only the authenticated user’s profile.
 - **Used by:** [app/(app)/settings/SettingsContent.tsx](../app/(app)/settings/SettingsContent.tsx) and [components/UserBar.tsx](../components/UserBar.tsx) when saving display name.
 
+### daily-aquarium-upkeep (cron only)
+
+- **Method:** `POST`
+- **URL:** `{SUPABASE_URL}/functions/v1/daily-aquarium-upkeep`
+- **Body:** None (or `{}`).
+- **Auth:** No user JWT. The function is called by pg_cron (or an external cron), not by a logged-in user. Authorization is done **inside the function** via the `X-Cron-Secret` header (see below). Supabase recommends turning **"Verify JWT with legacy secret"** **OFF** for this function so that requests without a user JWT are allowed; the function then enforces the secret header.
+- **Behaviour:** (1) Decreases every aquarium's `clean_level` by 10 (min 0). (2) For aquariums where `last_feed` is null or older than 24h, halves each fish's `health` in the `fish` JSON.
+
+**JWT verification:** In the Dashboard, open this function's settings and set **Verify JWT with legacy secret** to **OFF**. That way the cron job (which sends no user JWT) can call the URL; the function code checks `X-Cron-Secret` instead.
+
+**Setting CRON_SECRET:** Supabase does not have per-function secrets. All Edge Function env vars are **project-level**. Add `CRON_SECRET` in one of these ways:
+- **CLI (recommended):** From the **web-app** directory run:  
+  `supabase secrets set CRON_SECRET=your-long-random-string-here`  
+  (Pick a long random value; use the same value in the cron SQL below.)
+- **Dashboard:** Go to **Project Settings → Edge Functions → Secrets** (or the [Edge Function Secrets](https://supabase.com/dashboard/project/_/functions/secrets) page for your project). Add a secret with **Key** `CRON_SECRET` and **Value** your chosen secret. Only `daily-aquarium-upkeep` reads this variable in code; other functions ignore it.
+
+**Schedule the daily job (pg_cron + pg_net):** Run the following once in the Supabase **SQL Editor**, after enabling **pg_net** and deploying the function. Replace `YOUR_PROJECT_REF` with your project reference (e.g. `zgelovnhoobwtvmkrebc`) and `YOUR_CRON_SECRET` with the same value you set for `CRON_SECRET` (via CLI or Dashboard):
+
+```sql
+SELECT cron.schedule(
+  'daily-aquarium-upkeep',
+  '0 0 * * *',
+  $$
+  SELECT net.http_post(
+    url := 'https://YOUR_PROJECT_REF.supabase.co/functions/v1/daily-aquarium-upkeep',
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'X-Cron-Secret', 'YOUR_CRON_SECRET'
+    ),
+    body := '{}'::jsonb
+  ) AS request_id;
+  $$
+);
+```
+
+To list or unschedule: `SELECT * FROM cron.job;`, `SELECT cron.unschedule('daily-aquarium-upkeep');`.
+
 ---
 
 ## 5. Optional: local development
@@ -215,5 +254,6 @@ Use this if you want to run the database and Auth locally; otherwise `supabase f
 | **task-delete**         | POST   | `{ "taskId": "uuid" }`                                               | JWT    |
 | **user-profile-ensure** | POST   | `{ name?, profile_picture? }` (optional)                              | JWT    |
 | **user-profile-update** | POST   | `{ name?, profile_picture? }` (at least one)                          | JWT    |
+| **daily-aquarium-upkeep** | POST   | (none)                                                               | X-Cron-Secret (cron only) |
 
 For behaviour, shared-code layout, and iOS sources mirrored, see [supabase/README.md](../supabase/README.md).

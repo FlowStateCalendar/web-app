@@ -58,6 +58,7 @@ export type AquariumRow = {
   title: string;
   tank_type: string;
   clean_level: number;
+  last_feed: string | null;
   created_at: string;
   updated_at: string;
 };
