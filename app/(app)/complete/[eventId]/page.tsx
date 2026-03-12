@@ -24,9 +24,13 @@ export default async function CompleteEventPage({ params }: Props) {
 
   const scheduledDate = new Date(event.date);
   const now = new Date();
-  const isPast = scheduledDate.getTime() < now.setHours(0, 0, 0, 0);
+  const todayStart = new Date(now);
+  todayStart.setHours(0, 0, 0, 0);
+  const fiveMinMs = 5 * 60 * 1000;
+  const isBeforeToday = scheduledDate.getTime() < todayStart.getTime();
+  const isMoreThanFiveMinEarly = scheduledDate.getTime() > now.getTime() + fiveMinMs;
 
-  if (isPast) redirect("/dashboard");
+  if (isBeforeToday || isMoreThanFiveMinEarly) redirect("/dashboard");
 
   return (
     <CompletingTaskView

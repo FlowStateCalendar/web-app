@@ -33,7 +33,7 @@ export type TaskRow = {
 export type EventRow = {
   id: string;
   user_profile_id: string;
-  task_id: string;
+  task_id: string | null;
   title: string;
   description: string;
   date: string;
@@ -44,6 +44,8 @@ export type EventRow = {
   base_coins: number;
   created_at: string;
   updated_at: string;
+  source?: string | null;
+  external_id?: string | null;
 };
 
 export type LeaderboardEntry = {
@@ -59,6 +61,15 @@ export type AquariumRow = {
   tank_type: string;
   clean_level: number;
   last_feed: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type UserSettings = {
+  user_profile_id: string;
+  background_color: string;
+  sound_enabled: boolean;
+  notifications_enabled: boolean;
   created_at: string;
   updated_at: string;
 };

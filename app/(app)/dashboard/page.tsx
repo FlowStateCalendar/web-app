@@ -20,39 +20,78 @@ export default async function DashboardPage() {
     .lte("date", todayEnd.toISOString())
     .order("date", { ascending: true });
 
+  const nextEvent = events && events.length > 0 ? events[0] : null;
+  const restEvents = events && events.length > 1 ? events.slice(1) : [];
+
   return (
     <div className="mx-auto max-w-4xl px-4 py-6">
       <section className="mb-8">
-        <h2 className="mb-4 text-lg font-medium text-gray-900">
-          Today&apos;s Upcoming Events
-        </h2>
-        {events && events.length > 0 ? (
-          <ul className="space-y-3">
-            {events.map((event) => (
-              <li
-                key={event.id}
-                className="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
-              >
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-lg font-medium">
+            Today&apos;s Upcoming Events
+          </h2>
+          <Link
+            href="/dashboard/events"
+            className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          >
+            Show all events
+          </Link>
+        </div>
+        {nextEvent ? (
+          <>
+            <div className="mb-6 rounded-xl border-2 border-indigo-200 bg-indigo-50/80 p-4 shadow-sm">
+              <p className="mb-1 text-xs font-medium uppercase tracking-wide text-indigo-600">
+                Next up
+              </p>
+              <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-gray-900">{event.title}</p>
-                  <p className="text-sm text-gray-500">
-                    {new Date(event.date).toLocaleTimeString(undefined, {
+                  <p className="font-semibold text-gray-900">{nextEvent.title}</p>
+                  <p className="text-sm text-gray-600">
+                    {new Date(nextEvent.date).toLocaleTimeString(undefined, {
                       hour: "2-digit",
                       minute: "2-digit",
                     })}
                     {" · "}
-                    {Math.round((event.length ?? 0) / 60)} min
+                    {Math.round((nextEvent.length ?? 0) / 60)} min
                   </p>
                 </div>
                 <Link
-                  href={`/complete/${event.id}`}
+                  href={`/complete/${nextEvent.id}`}
                   className="rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
                 >
                   Start Task
                 </Link>
-              </li>
-            ))}
-          </ul>
+              </div>
+            </div>
+            {restEvents.length > 0 && (
+              <ul className="space-y-3">
+                {restEvents.map((event) => (
+                  <li
+                    key={event.id}
+                    className="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
+                  >
+                    <div>
+                      <p className="font-medium text-gray-900">{event.title}</p>
+                      <p className="text-sm text-gray-500">
+                        {new Date(event.date).toLocaleTimeString(undefined, {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                        {" · "}
+                        {Math.round((event.length ?? 0) / 60)} min
+                      </p>
+                    </div>
+                    <Link
+                      href={`/complete/${event.id}`}
+                      className="rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
+                    >
+                      Start Task
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
         ) : (
           <p className="rounded-lg border border-dashed border-gray-300 bg-white p-6 text-center text-gray-500">
             No events scheduled for today. Add tasks in the Tasks section.
