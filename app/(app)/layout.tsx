@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { AppNav } from "@/components/AppNav";
+import { TourProvider } from "@/components/TourProvider";
 import { UserBar } from "@/components/UserBar";
 
 const DEFAULT_BACKGROUND_COLOR = "#2d2d2d";
@@ -37,15 +38,17 @@ export default async function AppLayout({
   const isDarkBackground = backgroundColor !== LIGHT_BACKGROUND_COLOR;
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <UserBar profile={profile} user={user} />
-      <div
-        className={`flex-1 pb-16 md:pb-0 ${isDarkBackground ? "text-gray-100" : "text-gray-900"}`}
-        style={{ backgroundColor }}
-      >
-        {children}
+    <TourProvider>
+      <div className="flex min-h-screen flex-col">
+        <UserBar profile={profile} user={user} />
+        <div
+          className={`flex-1 pb-16 md:pb-0 ${isDarkBackground ? "text-gray-100" : "text-gray-900"}`}
+          style={{ backgroundColor }}
+        >
+          {children}
+        </div>
+        <AppNav />
       </div>
-      <AppNav />
-    </div>
+    </TourProvider>
   );
 }

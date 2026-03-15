@@ -55,7 +55,7 @@ export function ShopView({ userCoins: initialCoins }: { userCoins: number }) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-tour="shop">
       <div className="flex items-center justify-between">
         <Link
           href="/aquarium"

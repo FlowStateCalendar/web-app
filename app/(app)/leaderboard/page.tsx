@@ -13,7 +13,7 @@ export default async function LeaderboardPage() {
     .limit(50);
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-6">
+    <div className="mx-auto max-w-4xl px-4 py-6" data-tour="leaderboard">
       <header className="mb-6">
         <h1 className="text-xl font-semibold">Leaderboard</h1>
         <p className="text-sm text-gray-500">Weekly coins</p>

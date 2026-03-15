@@ -29,7 +29,7 @@ export default async function AquariumPage() {
     .single();
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-6">
+    <div className="mx-auto max-w-4xl px-4 py-6" data-tour="aquarium">
       <header className="mb-6 flex items-center justify-between">
         <h1 className="text-xl font-semibold">Aquarium</h1>
         <Link

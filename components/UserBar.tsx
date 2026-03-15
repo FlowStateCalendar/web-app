@@ -52,7 +52,7 @@ export function UserBar({
 
   return (
     <>
-      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-200 bg-white/95 px-4 py-3 backdrop-blur">
+      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-200 bg-white/95 px-4 py-3 backdrop-blur" data-tour="user-bar">
         <button
           type="button"
           onClick={() => setShowProfile(true)}

@@ -142,7 +142,7 @@ export function SettingsContent({
   }
 
   return (
-    <div className="space-y-1 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+    <div className="space-y-1 rounded-lg border border-gray-200 bg-white p-4 shadow-sm" data-tour="settings">
       <ExpandableSection title="General">
         <div className="space-y-4">
           <div>
@@ -227,7 +227,6 @@ export function SettingsContent({
                 {syncingClassroom ? "Syncing…" : "Sync Google Classroom"}
               </button>
             </div>
-          )}
         </div>
       </ExpandableSection>
 

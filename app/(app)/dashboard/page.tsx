@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
+import { StartTutorialButton } from "@/components/StartTutorialButton";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -24,18 +25,21 @@ export default async function DashboardPage() {
   const restEvents = events && events.length > 1 ? events.slice(1) : [];
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-6">
+    <div className="mx-auto max-w-4xl px-4 py-6" data-tour="dashboard-events">
       <section className="mb-8">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-medium">
             Today&apos;s Upcoming Events
           </h2>
-          <Link
-            href="/dashboard/events"
-            className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
-          >
-            Show all events
-          </Link>
+          <div className="flex items-center gap-2">
+            <StartTutorialButton />
+            <Link
+              href="/dashboard/events"
+              className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              Show all events
+            </Link>
+          </div>
         </div>
         {nextEvent ? (
           <>

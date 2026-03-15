@@ -15,7 +15,7 @@ export default async function TasksPage() {
     .order("date", { ascending: false });
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-6">
+    <div className="mx-auto max-w-4xl px-4 py-6" data-tour="tasks-section">
       <header className="mb-6 flex items-center justify-between">
         <h1 className="text-xl font-semibold">Tasks</h1>
       </header>
