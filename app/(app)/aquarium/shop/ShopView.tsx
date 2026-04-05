@@ -3,7 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
+import { shopItemImageUrl } from "@/lib/aquarium-assets";
 import { SHOP_CATALOG, SHOP_CATEGORIES, type ShopCatalogItem } from "@/lib/shop-catalog";
 
 export function ShopView({ userCoins: initialCoins }: { userCoins: number }) {
@@ -99,27 +101,42 @@ export function ShopView({ userCoins: initialCoins }: { userCoins: number }) {
       )}
 
       <div className="grid gap-4 sm:grid-cols-2">
-        {items.map((item) => (
-          <div
-            key={item.itemKey}
-            className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
-          >
-            <div className="flex h-20 items-center justify-center rounded-lg bg-gray-100 text-4xl">
-              {item.type === "fish" ? "🐠" : item.type === "tank" ? "🫙" : "🪸"}
-            </div>
-            <h3 className="mt-2 font-medium text-gray-900">{item.name}</h3>
-            <p className="text-sm text-gray-500">{item.description}</p>
-            <p className="mt-1 text-sm font-semibold text-indigo-600">{item.price} coins</p>
-            <button
-              type="button"
-              onClick={() => setConfirmItem(item)}
-              disabled={loading || coins < item.price}
-              className="mt-3 w-full rounded-md bg-indigo-600 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+        {items.map((item) => {
+          const imageSrc = shopItemImageUrl(item.image);
+          return (
+            <div
+              key={item.itemKey}
+              className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
             >
-              Buy
-            </button>
-          </div>
-        ))}
+              <div className="relative flex h-20 w-full items-center justify-center overflow-hidden rounded-lg bg-gray-100">
+                {imageSrc ? (
+                  <Image
+                    src={imageSrc}
+                    alt={item.name}
+                    width={96}
+                    height={96}
+                    className="max-h-full w-auto object-contain"
+                  />
+                ) : (
+                  <span className="text-4xl" aria-hidden>
+                    {item.type === "fish" ? "🐠" : item.type === "tank" ? "🫙" : "🪸"}
+                  </span>
+                )}
+              </div>
+              <h3 className="mt-2 font-medium text-gray-900">{item.name}</h3>
+              <p className="text-sm text-gray-500">{item.description}</p>
+              <p className="mt-1 text-sm font-semibold text-indigo-600">{item.price} coins</p>
+              <button
+                type="button"
+                onClick={() => setConfirmItem(item)}
+                disabled={loading || coins < item.price}
+                className="mt-3 w-full rounded-md bg-indigo-600 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+              >
+                Buy
+              </button>
+            </div>
+          );
+        })}
       </div>
 
       {confirmItem && (

@@ -1,6 +1,7 @@
 /**
  * Tutorial tour step definitions. Each step has a route (where it appears)
  * and a selector for the element to highlight. Used by the tour runner with driver.js.
+ * Copy is written in the shark mascot's voice.
  */
 export type TourStepConfig = {
   route: string;
@@ -16,45 +17,36 @@ export const TOUR_STEPS: TourStepConfig[] = [
     route: "/dashboard",
     element: "[data-tour='dashboard-events']",
     popover: {
-      title: "Welcome to Shift Habits",
+      title: "Hi, I'm your guide",
       description:
-        "This short tour will show you around the app. You'll see where everything lives and how tasks, rewards, and your aquarium work.",
+        "I'm here to swim you through Shift Habits. I'll show you where tasks, rewards, and your aquarium live so you can dive in with confidence.",
     },
   },
   {
     route: "/dashboard",
     element: "[data-tour='user-bar']",
     popover: {
-      title: "Top bar",
+      title: "Your coins and profile",
       description:
-        "Your greeting and coin balance live here. Tap your avatar to open your profile and see your level, XP, and total coins. Coins are earned by completing tasks.",
+        "Up here you'll see your greeting and coin balance. Tap your avatar to peek at your profile—level, XP, and coins. You earn coins every time you complete a task.",
     },
   },
   {
     route: "/dashboard",
     element: "[data-tour='app-nav']",
     popover: {
-      title: "Navigation",
+      title: "Getting around",
       description:
-        "Use these tabs to move between Dashboard, Tasks, Leaderboard, Aquarium, and Settings. We'll visit each one in this tour.",
+        "Use these tabs to glide between Dashboard, Tasks, Leaderboard, Aquarium, and Settings. I'll take you to each stop on this tour.",
     },
   },
   {
     route: "/dashboard",
     element: "[data-tour='dashboard-events']",
     popover: {
-      title: "Today's events",
+      title: "Your day, right here",
       description:
-        "Here you see today's scheduled events from your tasks. The \"Next up\" card is your current focus. Use \"Start Task\" to begin a timed session and earn XP and coins. \"Show all events\" opens your full schedule.",
-    },
-  },
-  {
-    route: "/dashboard",
-    element: "[data-tour='dashboard-events']",
-    popover: {
-      title: "How it works",
-      description:
-        "Tasks you create generate events on your calendar. When you complete an event (run the timer and finish), you earn XP and coins. Your weekly coins also count toward the leaderboard.",
+        "This is today's schedule from your tasks. The \"Next up\" card is what to focus on—tap \"Start Task\" to run a timed session and earn XP and coins. \"Show all events\" opens your full calendar. Remember: tasks create events, and finishing an event grows your rewards and leaderboard score.",
     },
   },
   {
@@ -63,7 +55,7 @@ export const TOUR_STEPS: TourStepConfig[] = [
     popover: {
       title: "Tasks",
       description:
-        "This is where you add and manage your tasks. Your tasks create events that show up on the Dashboard. Expand \"Add new task\" below to create one.",
+        "This is where you add and edit tasks—they're what feed your calendar. Open \"Add new task\" when you're ready to create one.",
     },
   },
   {
@@ -72,7 +64,7 @@ export const TOUR_STEPS: TourStepConfig[] = [
     popover: {
       title: "Leaderboard",
       description:
-        "See how your weekly coins compare with others. Complete tasks to earn coins; your total for the week appears here. Your row is highlighted so you can spot your rank.",
+        "See how your weekly coins stack up. Keep completing tasks to climb the ranks—your row is highlighted so you can find yourself quickly.",
     },
   },
   {
@@ -81,7 +73,7 @@ export const TOUR_STEPS: TourStepConfig[] = [
     popover: {
       title: "Aquarium",
       description:
-        "Your aquarium grows with your progress. Keep the tank clean and buy fish and accessories in the Shop using the coins you earn from completing tasks.",
+        "Your aquarium grows with you. Keep the tank clean and spend coins in the Shop on fish and decorations—I'll show you the Shop next.",
     },
   },
   {
@@ -90,7 +82,7 @@ export const TOUR_STEPS: TourStepConfig[] = [
     popover: {
       title: "Shop",
       description:
-        "Spend your coins here on fish, accessories, and tank upgrades. Coins are earned by completing tasks, so keep finishing events to grow your collection.",
+        "Splash your coins on fish, accessories, and tank upgrades. Everything here is paid for with coins from completed tasks, so keep finishing those events.",
     },
   },
   {
@@ -99,16 +91,16 @@ export const TOUR_STEPS: TourStepConfig[] = [
     popover: {
       title: "Settings",
       description:
-        "Change your theme, sound, and notifications here. You can also connect Google Classroom to sync tasks and manage your account details.",
+        "Tweak theme, sound, and notifications, connect Google Classroom, and manage your account—whatever keeps you in flow.",
     },
   },
   {
     route: "/settings",
     element: "[data-tour='settings']",
     popover: {
-      title: "You're all set",
+      title: "You're ready",
       description:
-        "You can restart this tour anytime from the Dashboard using the \"How it works\" button. Happy habit-building!",
+        "You can restart this tour anytime from the Dashboard with the \"How it works\" button. I'll be cheering for your habits—see you in the water!",
     },
   },
 ];

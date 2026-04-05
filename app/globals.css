@@ -1,3 +1,94 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* driver.js tour: shark mascot + speech bubble (TourProvider) */
+.sh-mascot-tour.driver-popover {
+  max-width: min(440px, calc(100vw - 24px));
+  min-width: 260px;
+}
+
+.sh-mascot-tour__row {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.sh-mascot-tour__mascot {
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-end;
+}
+
+.sh-mascot-tour__mascot-img {
+  width: 88px;
+  height: auto;
+  max-height: 104px;
+  object-fit: contain;
+  display: block;
+}
+
+.sh-mascot-tour__bubble {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 12px;
+  padding: 10px 12px;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.06);
+}
+
+.sh-mascot-tour__bubble::before {
+  content: "";
+  position: absolute;
+  left: -7px;
+  bottom: 18px;
+  width: 0;
+  height: 0;
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+  border-right: 9px solid #bae6fd;
+}
+
+.sh-mascot-tour__bubble::after {
+  content: "";
+  position: absolute;
+  left: -5px;
+  bottom: 19px;
+  width: 0;
+  height: 0;
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+  border-right: 8px solid #f0f9ff;
+}
+
+.sh-mascot-tour .sh-mascot-tour__bubble .driver-popover-title {
+  margin: 0 0 6px;
+  font-size: 1.05rem;
+  color: #0c4a6e;
+}
+
+.sh-mascot-tour .sh-mascot-tour__bubble .driver-popover-description {
+  margin: 0;
+  color: #334155;
+}
+
+@media (max-width: 480px) {
+  .sh-mascot-tour__row {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .sh-mascot-tour__bubble::before,
+  .sh-mascot-tour__bubble::after {
+    display: none;
+  }
+
+  .sh-mascot-tour__mascot-img {
+    width: 72px;
+    max-height: 88px;
+  }
+}

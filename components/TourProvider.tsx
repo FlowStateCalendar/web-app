@@ -6,6 +6,7 @@ import { driver, type Driver, type DriveStep } from "driver.js";
 import "driver.js/dist/driver.css";
 import { TOUR_STEPS } from "@/lib/tour-steps";
 import { useTourStore } from "@/lib/tour-store";
+import { enhanceMascotTourPopover } from "@/lib/tour-mascot";
 
 const TourContext = createContext<{ startTour: () => void } | null>(null);
 
@@ -46,11 +47,15 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const steps = toDriveSteps();
     const driverObj = driver({
+      popoverClass: "sh-mascot-tour",
       showProgress: true,
       progressText: "{{current}} of {{total}}",
       nextBtnText: "Next",
       prevBtnText: "Back",
       doneBtnText: "Done",
+      onPopoverRender: (popover) => {
+        enhanceMascotTourPopover(popover);
+      },
       steps,
       onNextClick: (element, step, opts) => {
         const idx = opts.driver.getActiveIndex() ?? 0;
