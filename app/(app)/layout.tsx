@@ -24,7 +24,7 @@ export default async function AppLayout({
   const [{ data: profile }, { data: settings }] = await Promise.all([
     supabase
       .from("user_profiles")
-      .select("name, coins, xp, level")
+      .select("name, coins, xp, level, profile_picture")
       .eq("id", user.id)
       .single(),
     supabase

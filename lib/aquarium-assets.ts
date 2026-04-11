@@ -35,3 +35,43 @@ export const BRAND = {
   logoTextLight: "/brand/LogoTextVertLight.png",
   appStore: "/brand/AppStoreLogo.png",
 } as const;
+
+/** iOS ProfileModal / profileIcon keys — order matches iOS grid */
+export const PROFILE_AVATAR_KEYS = [
+  "BlueFishLeft",
+  "OrangeFish",
+  "PinkFish",
+  "TealFish",
+  "RedFish",
+  "BlueFishRight",
+] as const;
+
+export type ProfileAvatarKey = (typeof PROFILE_AVATAR_KEYS)[number];
+
+export const DEFAULT_PROFILE_AVATAR_KEY: ProfileAvatarKey = "OrangeFish";
+
+const PROFILE_AVATAR_IMAGE_URL: Record<ProfileAvatarKey, string> = {
+  BlueFishLeft: `${A}/fish/BlueFishLeft.png`,
+  OrangeFish: `${A}/fish/OrangeFish.png`,
+  PinkFish: `${A}/fish/PinkFish.png`,
+  TealFish: `${A}/fish/TealFish.png`,
+  RedFish: `${A}/fish/RedFish.png`,
+  BlueFishRight: `${A}/fish/BlueFishRight.png`,
+};
+
+export function normalizeProfileAvatarKey(
+  profilePicture: string | null | undefined
+): ProfileAvatarKey {
+  if (
+    profilePicture &&
+    (PROFILE_AVATAR_KEYS as readonly string[]).includes(profilePicture)
+  ) {
+    return profilePicture as ProfileAvatarKey;
+  }
+  return DEFAULT_PROFILE_AVATAR_KEY;
+}
+
+/** Resolves DB `profile_picture` to a public image URL; unknown/null uses OrangeFish (iOS parity). */
+export function profileAvatarUrl(profilePicture: string | null | undefined): string {
+  return PROFILE_AVATAR_IMAGE_URL[normalizeProfileAvatarKey(profilePicture)];
+}
