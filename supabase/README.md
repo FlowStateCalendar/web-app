@@ -75,6 +75,11 @@ Ensure `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` are 
 - **Weekly leaderboard reset:** Applied by migration `20250307000002_weekly_leaderboard_reset_cron.sql` (resets `user_profiles.weekly_coins` every Monday 00:00 UTC). Requires pg_cron.
 - **Daily aquarium upkeep:** Deploy `daily-aquarium-upkeep`, set CRON_SECRET, then run the `cron.schedule` + `net.http_post` SQL once in the SQL Editor (see [docs/EDGE-FUNCTIONS-IMPLEMENTATION.md](../docs/EDGE-FUNCTIONS-IMPLEMENTATION.md)). Requires pg_net.
 
+## Profile defaults (optional ops)
+
+- After changing `user-profile-ensure` to default `profile_picture` to `OrangeFish` on insert, **redeploy** that function: `supabase functions deploy user-profile-ensure`.
+- Optional one-time SQL for analytics parity with older rows: `update user_profiles set profile_picture = 'OrangeFish' where profile_picture is null;`
+
 ## Next steps
 
 - Web app uses `complete-event`, `shop-purchase`, `task-create`, `task-update`, `task-delete`, and `user-profile-update`; deploy all and set service role secret if needed.

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -16,9 +17,11 @@ type FishItem = {
 export function FishListWithRename({
   aquariumId,
   fishJson,
+  onOpenDetail,
 }: {
   aquariumId: string;
   fishJson: string | unknown | null;
+  onOpenDetail?: (index: number) => void;
 }) {
   const router = useRouter();
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -26,7 +29,16 @@ export function FishListWithRename({
 
   const fishList: FishItem[] = (() => {
     if (fishJson == null) return [];
-    const parsed = typeof fishJson === "string" ? (() => { try { return JSON.parse(fishJson); } catch { return []; } })() : fishJson;
+    const parsed =
+      typeof fishJson === "string"
+        ? (() => {
+            try {
+              return JSON.parse(fishJson);
+            } catch {
+              return [];
+            }
+          })()
+        : fishJson;
     return Array.isArray(parsed) ? parsed : [];
   })();
 
@@ -56,7 +68,16 @@ export function FishListWithRename({
 
   if (fishList.length === 0) {
     return (
-      <p className="text-sm text-gray-500">No fish yet. Buy some in the Shop!</p>
+      <div className="rounded-lg border border-dashed border-amber-200 bg-amber-50/50 p-4 text-center">
+        <p className="text-sm font-medium text-gray-800">No fish yet</p>
+        <p className="mt-1 text-sm text-gray-600">Visit the Shop to stock your aquarium.</p>
+        <Link
+          href="/aquarium/shop"
+          className="mt-3 inline-flex rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+        >
+          Go to Shop
+        </Link>
+      </div>
     );
   }
 
@@ -72,22 +93,32 @@ export function FishListWithRename({
               className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2"
             >
               <span className="font-medium text-gray-900">🐠 {displayName}</span>
-              <button
-                type="button"
-                onClick={() => {
-                  setEditingIndex(index);
-                  setRenameValue(fish.customName?.trim() || "");
-                }}
-                className="text-sm text-indigo-600 hover:text-indigo-500"
-              >
-                Rename
-              </button>
+              {onOpenDetail ? (
+                <button
+                  type="button"
+                  onClick={() => onOpenDetail(index)}
+                  className="text-sm text-indigo-600 hover:text-indigo-500"
+                >
+                  Details
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingIndex(index);
+                    setRenameValue(fish.customName?.trim() || "");
+                  }}
+                  className="text-sm text-indigo-600 hover:text-indigo-500"
+                >
+                  Rename
+                </button>
+              )}
             </li>
           );
         })}
       </ul>
 
-      {editingFish && editingIndex !== null && (
+      {!onOpenDetail && editingFish && editingIndex !== null && (
         <div className="fixed inset-0 z-20 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-lg">
             <h3 className="text-lg font-semibold text-gray-900">Rename fish</h3>

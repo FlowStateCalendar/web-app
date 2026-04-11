@@ -1,6 +1,6 @@
 # Edge Functions Implementation Guide
 
-Step-by-step instructions for setting up, deploying, and calling Supabase Edge Functions in this project. The app uses **complete-event** (task/event completion and rewards), **shop-purchase** (aquarium shop), **task-create** / **task-update** / **task-delete** (tasks CRUD), **user-profile-ensure** / **user-profile-update** (profile create/update), and **daily-aquarium-upkeep** (cron-invoked: clean_level decay and fish health decay when not fed).
+Step-by-step instructions for setting up, deploying, and calling Supabase Edge Functions in this project. The app uses **complete-event** (task/event completion and rewards), **shop-purchase** (aquarium shop), **aquarium-set-active-tank** (switch visible tank when the user owns multiple tank sizes), **task-create** / **task-update** / **task-delete** (tasks CRUD), **user-profile-ensure** / **user-profile-update** (profile create/update), and **daily-aquarium-upkeep** (cron-invoked: clean_level decay and fish health decay when not fed).
 
 ---
 
@@ -59,6 +59,7 @@ Deploy from the **web-app** directory (parent of `supabase/`).
 ```bash
 supabase functions deploy complete-event
 supabase functions deploy shop-purchase
+supabase functions deploy aquarium-set-active-tank
 supabase functions deploy task-create
 supabase functions deploy task-update
 supabase functions deploy task-delete
@@ -88,6 +89,7 @@ After a successful deploy, the functions are available at:
 
 - `https://<your-project-ref>.supabase.co/functions/v1/complete-event`
 - `https://<your-project-ref>.supabase.co/functions/v1/shop-purchase`
+- `https://<your-project-ref>.supabase.co/functions/v1/aquarium-set-active-tank`
 - `https://<your-project-ref>.supabase.co/functions/v1/task-create`
 - `https://<your-project-ref>.supabase.co/functions/v1/task-update`
 - `https://<your-project-ref>.supabase.co/functions/v1/task-delete`
@@ -135,6 +137,14 @@ const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/co
 - **Auth:** Required. Coins are deducted from the authenticated user; aquarium must belong to that user.
 
 The web app calls **shop-purchase** from the shop UI: [app/(app)/aquarium/shop/ShopView.tsx](../app/(app)/aquarium/shop/ShopView.tsx). The task completion flow calls **complete-event** from [components/CompletingTaskView.tsx](../components/CompletingTaskView.tsx) (rewards and completion are applied server-side).
+
+### aquarium-set-active-tank
+
+- **Method:** `POST`
+- **URL:** `{SUPABASE_URL}/functions/v1/aquarium-set-active-tank`
+- **Body:** `{ "tankType": "small" | "medium" | "large" }` — must be present in the user’s `aquariums.owned_tanks` array.
+- **Auth:** Required. Updates `aquariums.tank_type` for the authenticated user’s aquarium row.
+- **Used by:** [components/TankTypeSwitcher.tsx](../components/TankTypeSwitcher.tsx) on the aquarium page when more than one tank size is owned.
 
 ### task-create
 

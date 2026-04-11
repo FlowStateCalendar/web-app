@@ -12,7 +12,7 @@ export default async function SettingsPage() {
   const [{ data: profile }, { data: settings }, { data: classroomTokenRow }] = await Promise.all([
     supabase
       .from("user_profiles")
-      .select("name, xp, level, coins")
+      .select("name, xp, level, coins, profile_picture")
       .eq("id", user?.id)
       .single(),
     supabase

@@ -1,14 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { ExpandableSection } from "@/components/ExpandableSection";
+import { ProfilePicturePicker } from "@/components/ProfilePicturePicker";
 import { SignOutButton } from "@/components/SignOutButton";
-
-const BACKGROUND_PRESETS = [
-  { value: "#2d2d2d", label: "Dark grey" },
-  { value: "#f9fafb", label: "Light" },
-] as const;
+import { BACKGROUND_PRESETS } from "@/lib/theme-presets";
 
 export function SettingsContent({
   profile,
@@ -17,12 +15,20 @@ export function SettingsContent({
   initialSettings,
   hasClassroomTokens = false,
 }: {
-  profile: { name: string | null; xp: number | null; level: number | null; coins: number | null } | null;
+  profile: {
+    name: string | null;
+    xp: number | null;
+    level: number | null;
+    coins: number | null;
+    profile_picture: string | null;
+  } | null;
   userEmail: string | null;
   userId: string | null;
   initialSettings: { background_color: string; sound_enabled: boolean; notifications_enabled: boolean };
   hasClassroomTokens?: boolean;
 }) {
+  const router = useRouter();
+  const [pictureError, setPictureError] = useState<string | null>(null);
   const [hasGoogleIdentity, setHasGoogleIdentity] = useState(false);
   useEffect(() => {
     const supabase = createClient();
@@ -147,22 +153,31 @@ export function SettingsContent({
         <div className="space-y-4">
           <div>
             <p className="mb-2 text-xs text-gray-500">Background colour</p>
-            <div className="flex flex-wrap gap-2">
-              {BACKGROUND_PRESETS.map(({ value, label }) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => handleBackgroundChange(value)}
-                  disabled={savingSettings}
-                  className={`rounded-md border px-3 py-2 text-sm font-medium ${
-                    backgroundColor === value
-                      ? "border-indigo-600 bg-indigo-50 text-indigo-700"
-                      : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
+            <div className="grid grid-cols-4 sm:grid-cols-6 gap-3">
+              {BACKGROUND_PRESETS.map(({ value, label }) => {
+                const selected = backgroundColor.toLowerCase() === value.toLowerCase();
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    title={label}
+                    onClick={() => handleBackgroundChange(value)}
+                    disabled={savingSettings}
+                    className={`group flex flex-col items-center gap-1 rounded-lg p-1 outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 ${
+                      selected ? "ring-2 ring-indigo-600 ring-offset-2" : ""
+                    }`}
+                  >
+                    <span
+                      className="h-10 w-10 rounded-full border border-gray-300 shadow-inner"
+                      style={{ backgroundColor: value }}
+                      aria-hidden
+                    />
+                    <span className="max-w-[4.5rem] truncate text-center text-[10px] text-gray-600 group-hover:text-gray-900">
+                      {label}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
           <label className="flex items-center gap-2">
@@ -276,6 +291,20 @@ export function SettingsContent({
             <p className="text-xs text-gray-500">Email</p>
             <p className="font-medium text-gray-900">{userEmail ?? "—"}</p>
           </div>
+          {pictureError && (
+            <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
+              {pictureError}
+            </p>
+          )}
+          <ProfilePicturePicker
+            initialProfilePicture={profile?.profile_picture ?? null}
+            onSaved={() => router.refresh()}
+            onError={setPictureError}
+            onClearError={() => setPictureError(null)}
+          />
+          <p className="text-sm text-gray-600">
+            You can also update your picture from the header (tap your avatar).
+          </p>
           {profile && (
             <div className="flex gap-4 text-sm text-gray-600">
               <span>Level {profile.level ?? 1}</span>

@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { StartTutorialButton } from "@/components/StartTutorialButton";
+import { AQUARIUM_BACKGROUNDS } from "@/lib/aquarium-assets";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -25,8 +26,13 @@ export default async function DashboardPage() {
   const restEvents = events && events.length > 1 ? events.slice(1) : [];
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-6" data-tour="dashboard-events">
-      <section className="mb-8">
+    <div className="relative mx-auto max-w-4xl px-4 py-6" data-tour="dashboard-events">
+      <div
+        className="pointer-events-none absolute inset-0 -z-0 rounded-2xl bg-cover bg-center opacity-[0.14]"
+        style={{ backgroundImage: `url(${AQUARIUM_BACKGROUNDS.fish})` }}
+        aria-hidden
+      />
+      <section className="relative z-10 mb-8">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-medium">
             Today&apos;s Upcoming Events

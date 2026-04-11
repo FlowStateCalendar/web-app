@@ -1,20 +1,8 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { AquariumActions } from "@/components/AquariumActions";
-import { AquariumStats } from "@/components/AquariumStats";
-import { FishListWithRename } from "@/components/FishListWithRename";
+import { AquariumExperience } from "@/components/AquariumExperience";
 
-function parseFishCount(fish: string | unknown | null): number {
-  if (fish == null) return 0;
-  const arr = typeof fish === "string" ? (() => { try { return JSON.parse(fish); } catch { return []; } })() : fish;
-  return Array.isArray(arr) ? arr.length : 0;
-}
-
-function parseAccessoryCount(accessories: string | unknown | null): number {
-  if (accessories == null) return 0;
-  const arr = typeof accessories === "string" ? (() => { try { return JSON.parse(accessories); } catch { return []; } })() : accessories;
-  return Array.isArray(arr) ? arr.length : 0;
-}
+const DEFAULT_SHELL_BG = "#2d2d2d";
 
 export default async function AquariumPage() {
   const supabase = await createClient();
@@ -22,11 +10,20 @@ export default async function AquariumPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: aquarium } = await supabase
-    .from("aquariums")
-    .select("id, title, clean_level, tank_type, fish, accessories, owned_tanks")
-    .eq("user_profile_id", user?.id)
-    .single();
+  const [{ data: aquarium }, { data: userSettings }] = await Promise.all([
+    supabase
+      .from("aquariums")
+      .select("id, title, clean_level, tank_type, fish, accessories, owned_tanks")
+      .eq("user_profile_id", user?.id)
+      .single(),
+    supabase
+      .from("user_settings")
+      .select("background_color")
+      .eq("user_profile_id", user?.id ?? "")
+      .maybeSingle(),
+  ]);
+
+  const shellBackgroundHex = userSettings?.background_color ?? DEFAULT_SHELL_BG;
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-6" data-tour="aquarium">
@@ -41,34 +38,36 @@ export default async function AquariumPage() {
       </header>
 
       {aquarium ? (
-        <div className="space-y-6">
-          <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="font-medium text-gray-900">{aquarium.title}</h2>
-            <p className="mt-2 text-sm text-gray-600">
-              Clean level: {aquarium.clean_level ?? 0}%
-            </p>
-            <p className="text-sm text-gray-500">Tank: {aquarium.tank_type}</p>
-            <AquariumActions
-              aquariumId={aquarium.id}
-              cleanLevel={aquarium.clean_level ?? 0}
-            />
-          </div>
-          <AquariumStats
-            cleanLevel={aquarium.clean_level ?? 0}
-            fishCount={parseFishCount(aquarium.fish)}
-            accessoryCount={parseAccessoryCount(aquarium.accessories)}
-            tankType={aquarium.tank_type}
-          />
-          <FishListWithRename
-            aquariumId={aquarium.id}
-            fishJson={aquarium.fish}
-          />
-        </div>
+        <AquariumExperience
+          aquariumId={aquarium.id}
+          title={aquarium.title}
+          cleanLevel={aquarium.clean_level}
+          tankType={aquarium.tank_type}
+          fishJson={aquarium.fish}
+          accessoriesJson={aquarium.accessories}
+          ownedTanksRaw={aquarium.owned_tanks}
+          shellBackgroundHex={shellBackgroundHex}
+        />
       ) : (
-        <p className="rounded-lg border border-dashed border-gray-300 bg-white p-6 text-center text-gray-500">
-          No aquarium yet. One will be created when you complete tasks (or we
-          can add a &quot;Create aquarium&quot; flow).
-        </p>
+        <div className="space-y-4 rounded-lg border border-dashed border-gray-300 bg-white p-8 text-center shadow-sm">
+          <p className="text-gray-700">
+            No aquarium yet. Complete tasks to earn your tank, or explore the app to get started.
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <Link
+              href="/tasks"
+              className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+            >
+              Go to Tasks
+            </Link>
+            <Link
+              href="/dashboard"
+              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50"
+            >
+              Dashboard
+            </Link>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -2,6 +2,26 @@
 @tailwind components;
 @tailwind utilities;
 
+@keyframes aquarium-fish-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+.aquarium-fish-sprite {
+  animation: aquarium-fish-float 4.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aquarium-fish-sprite {
+    animation: none;
+  }
+}
+
 /* driver.js tour: shark mascot + speech bubble (TourProvider) */
 .sh-mascot-tour.driver-popover {
   max-width: min(440px, calc(100vw - 24px));

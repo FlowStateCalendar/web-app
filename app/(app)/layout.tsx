@@ -3,9 +3,9 @@ import { createClient } from "@/lib/supabase/server";
 import { AppNav } from "@/components/AppNav";
 import { TourProvider } from "@/components/TourProvider";
 import { UserBar } from "@/components/UserBar";
+import { isDarkBackgroundColor } from "@/lib/color-luminance";
 
 const DEFAULT_BACKGROUND_COLOR = "#2d2d2d";
-const LIGHT_BACKGROUND_COLOR = "#f9fafb";
 
 export default async function AppLayout({
   children,
@@ -35,7 +35,7 @@ export default async function AppLayout({
   ]);
 
   const backgroundColor = settings?.background_color ?? DEFAULT_BACKGROUND_COLOR;
-  const isDarkBackground = backgroundColor !== LIGHT_BACKGROUND_COLOR;
+  const isDarkBackground = isDarkBackgroundColor(backgroundColor);
 
   return (
     <TourProvider>
