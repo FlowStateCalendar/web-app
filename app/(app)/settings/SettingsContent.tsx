@@ -7,6 +7,7 @@ import { ExpandableSection } from "@/components/ExpandableSection";
 import { ProfilePicturePicker } from "@/components/ProfilePicturePicker";
 import { SignOutButton } from "@/components/SignOutButton";
 import { BACKGROUND_PRESETS } from "@/lib/theme-presets";
+import { registerWebPushForUser, unregisterWebPushForUser } from "@/lib/web-push-register";
 
 export function SettingsContent({
   profile,
@@ -24,7 +25,14 @@ export function SettingsContent({
   } | null;
   userEmail: string | null;
   userId: string | null;
-  initialSettings: { background_color: string; sound_enabled: boolean; notifications_enabled: boolean };
+  initialSettings: {
+    background_color: string;
+    sound_enabled: boolean;
+    notifications_enabled: boolean;
+    email_reminders_enabled: boolean;
+    push_web_enabled: boolean;
+    push_ios_enabled: boolean;
+  };
   hasClassroomTokens?: boolean;
 }) {
   const router = useRouter();
@@ -39,6 +47,11 @@ export function SettingsContent({
   }, []);
   const [soundEnabled, setSoundEnabled] = useState(initialSettings.sound_enabled);
   const [backgroundColor, setBackgroundColor] = useState(initialSettings.background_color);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(initialSettings.notifications_enabled);
+  const [emailRemindersEnabled, setEmailRemindersEnabled] = useState(initialSettings.email_reminders_enabled);
+  const [pushWebEnabled, setPushWebEnabled] = useState(initialSettings.push_web_enabled);
+  const [pushIosEnabled, setPushIosEnabled] = useState(initialSettings.push_ios_enabled);
+  const [pushMessage, setPushMessage] = useState<string | null>(null);
   const [editingName, setEditingName] = useState(false);
   const [nameValue, setNameValue] = useState(profile?.name ?? "");
   const [savingName, setSavingName] = useState(false);
@@ -47,7 +60,14 @@ export function SettingsContent({
   const [syncingClassroom, setSyncingClassroom] = useState(false);
   const [classroomSyncMessage, setClassroomSyncMessage] = useState<string | null>(null);
 
-  async function upsertSettings(patch: { sound_enabled?: boolean; background_color?: string }) {
+  async function upsertSettings(patch: {
+    sound_enabled?: boolean;
+    background_color?: string;
+    notifications_enabled?: boolean;
+    email_reminders_enabled?: boolean;
+    push_web_enabled?: boolean;
+    push_ios_enabled?: boolean;
+  }) {
     if (!userId) return;
     setSavingSettings(true);
     try {
@@ -57,7 +77,10 @@ export function SettingsContent({
           user_profile_id: userId,
           sound_enabled: patch.sound_enabled ?? soundEnabled,
           background_color: patch.background_color ?? backgroundColor,
-          notifications_enabled: initialSettings.notifications_enabled,
+          notifications_enabled: patch.notifications_enabled ?? notificationsEnabled,
+          email_reminders_enabled: patch.email_reminders_enabled ?? emailRemindersEnabled,
+          push_web_enabled: patch.push_web_enabled ?? pushWebEnabled,
+          push_ios_enabled: patch.push_ios_enabled ?? pushIosEnabled,
           updated_at: new Date().toISOString(),
         },
         { onConflict: "user_profile_id" }
@@ -72,6 +95,41 @@ export function SettingsContent({
     const next = !soundEnabled;
     setSoundEnabled(next);
     upsertSettings({ sound_enabled: next });
+  }
+
+  function toggleNotificationsEnabled() {
+    const next = !notificationsEnabled;
+    setNotificationsEnabled(next);
+    upsertSettings({ notifications_enabled: next });
+  }
+
+  function toggleEmailReminders() {
+    const next = !emailRemindersEnabled;
+    setEmailRemindersEnabled(next);
+    upsertSettings({ email_reminders_enabled: next });
+  }
+
+  async function togglePushWeb() {
+    if (!userId) return;
+    const next = !pushWebEnabled;
+    setPushMessage(null);
+    if (next) {
+      const result = await registerWebPushForUser(userId);
+      if (!result.ok) {
+        setPushMessage(result.error ?? "Could not enable browser notifications.");
+        return;
+      }
+    } else {
+      await unregisterWebPushForUser(userId);
+    }
+    await upsertSettings({ push_web_enabled: next });
+    setPushWebEnabled(next);
+  }
+
+  function togglePushIos() {
+    const next = !pushIosEnabled;
+    setPushIosEnabled(next);
+    upsertSettings({ push_ios_enabled: next });
   }
 
   function handleBackgroundChange(value: string) {
@@ -194,7 +252,57 @@ export function SettingsContent({
       </ExpandableSection>
 
       <ExpandableSection title="Notifications">
-        <p className="text-sm text-gray-500">Set default notification settings here. (Coming soon.)</p>
+        <div className="space-y-3 text-sm text-gray-700">
+          <p className="text-xs text-gray-500">
+            Reminders are sent by the server for upcoming tasks (email, browser push, and iPhone when the app has registered for push).
+            Set <span className="font-medium">NEXT_PUBLIC_VAPID_PUBLIC_KEY</span> for browser push.
+          </p>
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={notificationsEnabled}
+              onChange={toggleNotificationsEnabled}
+              disabled={savingSettings}
+              className="h-4 w-4 rounded border-gray-300 text-indigo-600"
+            />
+            <span>Enable reminders (master)</span>
+          </label>
+          <label className={`flex items-center gap-2 ${!notificationsEnabled ? "opacity-50" : ""}`}>
+            <input
+              type="checkbox"
+              checked={emailRemindersEnabled}
+              onChange={toggleEmailReminders}
+              disabled={savingSettings || !notificationsEnabled}
+              className="h-4 w-4 rounded border-gray-300 text-indigo-600"
+            />
+            <span>Email reminders ({userEmail ?? "no email"})</span>
+          </label>
+          <label className={`flex items-center gap-2 ${!notificationsEnabled ? "opacity-50" : ""}`}>
+            <input
+              type="checkbox"
+              checked={pushWebEnabled}
+              onChange={() => void togglePushWeb()}
+              disabled={savingSettings || !notificationsEnabled}
+              className="h-4 w-4 rounded border-gray-300 text-indigo-600"
+            />
+            <span>Browser push notifications</span>
+          </label>
+          <label className={`flex items-center gap-2 ${!notificationsEnabled ? "opacity-50" : ""}`}>
+            <input
+              type="checkbox"
+              checked={pushIosEnabled}
+              onChange={togglePushIos}
+              disabled={savingSettings || !notificationsEnabled}
+              className="h-4 w-4 rounded border-gray-300 text-indigo-600"
+            />
+            <span>iPhone push (native app; avoids duplicate local alerts when enabled)</span>
+          </label>
+          {pushMessage && (
+            <p className="text-xs text-red-600" role="alert">
+              {pushMessage}
+            </p>
+          )}
+        </div>
       </ExpandableSection>
 
       <ExpandableSection title="Tasks">

@@ -17,7 +17,9 @@ export default async function SettingsPage() {
       .single(),
     supabase
       .from("user_settings")
-      .select("background_color, sound_enabled, notifications_enabled")
+      .select(
+        "background_color, sound_enabled, notifications_enabled, email_reminders_enabled, push_web_enabled, push_ios_enabled"
+      )
       .eq("user_profile_id", user?.id ?? "")
       .maybeSingle(),
     supabase
@@ -33,6 +35,9 @@ export default async function SettingsPage() {
     background_color: settings?.background_color ?? DEFAULT_BACKGROUND_COLOR,
     sound_enabled: settings?.sound_enabled ?? true,
     notifications_enabled: settings?.notifications_enabled ?? true,
+    email_reminders_enabled: settings?.email_reminders_enabled ?? true,
+    push_web_enabled: settings?.push_web_enabled ?? true,
+    push_ios_enabled: settings?.push_ios_enabled ?? true,
   };
 
   return (

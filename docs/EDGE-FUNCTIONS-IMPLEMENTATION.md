@@ -1,6 +1,6 @@
 # Edge Functions Implementation Guide
 
-Step-by-step instructions for setting up, deploying, and calling Supabase Edge Functions in this project. The app uses **complete-event** (task/event completion and rewards), **shop-purchase** (aquarium shop), **aquarium-set-active-tank** (switch visible tank when the user owns multiple tank sizes), **task-create** / **task-update** / **task-delete** (tasks CRUD), **user-profile-ensure** / **user-profile-update** (profile create/update), and **daily-aquarium-upkeep** (cron-invoked: clean_level decay and fish health decay when not fed).
+Step-by-step instructions for setting up, deploying, and calling Supabase Edge Functions in this project. The app uses **complete-event** (task/event completion and rewards), **shop-purchase** (aquarium shop), **aquarium-set-active-tank** (switch visible tank when the user owns multiple tank sizes), **task-create** / **task-update** / **task-delete** (tasks CRUD), **user-profile-ensure** / **user-profile-update** (profile create/update), **daily-aquarium-upkeep** (cron-invoked: clean_level decay and fish health decay when not fed), and **dispatch-reminders** (cron-invoked: email, Web Push, and APNs reminders for upcoming events).
 
 ---
 
@@ -66,6 +66,7 @@ supabase functions deploy task-delete
 supabase functions deploy user-profile-ensure
 supabase functions deploy user-profile-update
 supabase functions deploy daily-aquarium-upkeep
+supabase functions deploy dispatch-reminders
 ```
 
 **Deploy a single function:**
@@ -96,6 +97,7 @@ After a successful deploy, the functions are available at:
 - `https://<your-project-ref>.supabase.co/functions/v1/user-profile-ensure`
 - `https://<your-project-ref>.supabase.co/functions/v1/user-profile-update`
 - `https://<your-project-ref>.supabase.co/functions/v1/daily-aquarium-upkeep`
+- `https://<your-project-ref>.supabase.co/functions/v1/dispatch-reminders`
 
 ---
 
@@ -200,7 +202,7 @@ The web app calls **shop-purchase** from the shop UI: [app/(app)/aquarium/shop/S
 - **CLI (recommended):** From the **web-app** directory run:  
   `supabase secrets set CRON_SECRET=your-long-random-string-here`  
   (Pick a long random value; use the same value in the cron SQL below.)
-- **Dashboard:** Go to **Project Settings → Edge Functions → Secrets** (or the [Edge Function Secrets](https://supabase.com/dashboard/project/_/functions/secrets) page for your project). Add a secret with **Key** `CRON_SECRET` and **Value** your chosen secret. Only `daily-aquarium-upkeep` reads this variable in code; other functions ignore it.
+- **Dashboard:** Go to **Project Settings → Edge Functions → Secrets** (or the [Edge Function Secrets](https://supabase.com/dashboard/project/_/functions/secrets) page for your project). Add a secret with **Key** `CRON_SECRET` and **Value** your chosen secret. Cron functions (**daily-aquarium-upkeep**, **dispatch-reminders**) validate this header; other functions ignore it.
 
 **Schedule the daily job (pg_cron + pg_net):** Run the following once in the Supabase **SQL Editor**, after enabling **pg_net** and deploying the function. Replace `YOUR_PROJECT_REF` with your project reference (e.g. `zgelovnhoobwtvmkrebc`) and `YOUR_CRON_SECRET` with the same value you set for `CRON_SECRET` (via CLI or Dashboard):
 
@@ -222,6 +224,34 @@ SELECT cron.schedule(
 ```
 
 To list or unschedule: `SELECT * FROM cron.job;`, `SELECT cron.unschedule('daily-aquarium-upkeep');`.
+
+### dispatch-reminders (cron only)
+
+- **Method:** `POST`
+- **URL:** `{SUPABASE_URL}/functions/v1/dispatch-reminders`
+- **Body:** None (or `{}`).
+- **Auth:** No user JWT. The function is called by **pg_cron** every few minutes (recommended: every 5 minutes). Authorization uses the same **`X-Cron-Secret`** header as **daily-aquarium-upkeep**. Set **Verify JWT** to **OFF** for this function (see [`supabase/config.toml`](../supabase/config.toml) `[functions.dispatch-reminders]`).
+- **Behaviour:** Loads upcoming `events` (with `tasks` for `notification_timings`), computes each reminder fire time, and sends **Resend** email (if enabled in `user_settings`), **Web Push** to rows in `push_subscriptions_web`, and **APNs** to rows in `push_subscriptions_ios`. Uses `notification_deliveries` idempotency keys so duplicate cron ticks do not double-send.
+
+**Secrets (project-level, Dashboard or `supabase secrets set`):**
+
+| Secret | Purpose |
+|--------|---------|
+| `CRON_SECRET` | Same shared secret as daily cron; must match the value in your pg_net `http_post` header. |
+| `RESEND_API_KEY` | [Resend](https://resend.com) API key for transactional email. |
+| `RESEND_FROM_EMAIL` | Optional. From address (must be verified in Resend), e.g. `ShiftHabits <noreply@yourdomain.com>`. |
+| `VAPID_PUBLIC_KEY` | Web Push public key (same value as `NEXT_PUBLIC_VAPID_PUBLIC_KEY` in the web app). |
+| `VAPID_PRIVATE_KEY` | Web Push private key; **never** expose to the client. |
+| `VAPID_SUBJECT` | Optional `mailto:` or `https:` contact URL for Web Push (e.g. `mailto:support@example.com`). |
+| `APNS_KEY_P8` | Apple Push Auth Key **.p8** contents (PEM), including `BEGIN/END PRIVATE KEY`. |
+| `APNS_KEY_ID` | Key ID from Apple Developer → Keys. |
+| `APNS_TEAM_ID` | Apple Team ID. |
+| `APNS_BUNDLE_ID` | App bundle ID (e.g. `com.rsummers.flowstatecalendarapp2025`). |
+| `APNS_USE_SANDBOX` | Optional. Set to `true` to use `api.sandbox.push.apple.com` for development builds. |
+
+Generate VAPID keys locally: `npx web-push generate-vapid-keys` — put **public** in the web app env as `NEXT_PUBLIC_VAPID_PUBLIC_KEY` and both in Edge secrets as `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY`.
+
+**Schedule the job:** Run the SQL in [supabase/manual/dispatch-reminders-cron.sql](../supabase/manual/dispatch-reminders-cron.sql) once in the SQL Editor (replace `YOUR_PROJECT_REF` and `YOUR_CRON_SECRET`). Requires **pg_cron** and **pg_net**. Use `cron.unschedule('dispatch-reminders')` to remove.
 
 ---
 
@@ -265,5 +295,6 @@ Use this if you want to run the database and Auth locally; otherwise `supabase f
 | **user-profile-ensure** | POST   | `{ name?, profile_picture? }` (optional)                              | JWT    |
 | **user-profile-update** | POST   | `{ name?, profile_picture? }` (at least one)                          | JWT    |
 | **daily-aquarium-upkeep** | POST   | (none)                                                               | X-Cron-Secret (cron only) |
+| **dispatch-reminders** | POST   | (none)                                                               | X-Cron-Secret (cron only) |
 
 For behaviour, shared-code layout, and iOS sources mirrored, see [supabase/README.md](../supabase/README.md).
